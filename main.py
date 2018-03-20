@@ -6,110 +6,89 @@ Created on Mon Dec 18 01:46:11 2017
 """
 
 import xml.etree.ElementTree as ET
-from Classes.edge import Edge
-from Classes.node import Node
+from Functions.mapIdToObjects import mainGetIdToObjectMap, addLoopingEdgesToPaths
+from Functions.path import pathCalculator
+from Functions import classifyNodeAndEdge
+from Functions.report import writeToTxt
 
-from Functions.attrFinder import AttrFinder
-from Functions.pathInvestigator import pathInvestigator
-from Functions.extractnodefrompath import ExtractNodefromPath
+"""
+In order to do a Model Based Testing, a tester has to know most of the every possible combination 
+of inputs that may be given by an end-user. Seeing all the possible inputs using a flowchart is 
+hard.
 
-#xml file to be imported
+This function, extracts every possible path from a flowchart that contains states and functions 
+that can be encountered while using the product. This flowchart should be arranged on draw.io . 
+
+The flowchart should have nodes which represent either as state or function. Nodes should be 
+connected with edges.
+
+There has to be one invoke node. All paths should start from invoke node. Invoke node has to be
+rectangle and its value should be 'invoke'.
+ 
+There has to be a terminate node. All paths should end in this node. Terminate node has to be
+rectangle and its value should 'terminate'.
+
+A program has functions and states. Functions may be buttons, sliders etc. States and functions are
+the main elements of a flowchart.
+
+"Function" in a flowchart appears to be nodes. However, these nodes has to be rectangle on draw.io
+and its value has to be other than 'invoke' or 'terminate' in order for this program to understand 
+the nodes as functions.
+
+"State" in a flowchart appears to be nodes. These nodes has to be ellipse on draw.io
+in order for this program to understand the nodes as states.
+
+Every node has at least one child, parent or childedge. Nodes are connected to each other by edges.
+
+In order to use this program create your flowchart on draw.io and extract it as XML to your computer
+and BE SURE TO UNCHECK 'Compressed' BEFORE EXPORTING.
+
+This script:
+    Takes a flowchart as XML format as input.
+    Then;
+    1- Parses the root of XML file(flowchart) which is created on draw.io 
+    2- Exracts all nodes and edges drawn on the flowchart
+    3- Creates a dictionary that acts as a map which allows accessing edge and node objects
+        by their Ids
+    4- Extracts all possible paths from the flowchart excluding the looping edges
+    (An edge whose source node and target node are the same is called a looping edge.)
+    5- Includes the looping edges to the corresponding paths
+    6- Reports all paths by writing every nodes' value(text written on the node) on a path 
+    to a .txt file
+"""
+
+def main(file):
+    """ PARSE XML FILE """
+    #Get the root of the XML file
+    tree = ET.parse(file)
+    XMLroot = tree.getroot()
+    
+    """ EXTRACT NODES AND EDGES FROM XML """
+    #Parse XML to obtain edge and node objects
+    nodes, edges = classifyNodeAndEdge.main(XMLroot)
+        
+    """ MAP OBJECT IDs TO ITS OBJECT """
+    #Map object Ids to objects. Add childs, parents and childedges to nodes
+    idToObject, loopingEdges = mainGetIdToObjectMap(nodes, edges)
+    
+    """ EXTRACT ALL POSSIBLE PATHS """
+    #Extract all possible paths from nodes
+    pc = pathCalculator(nodes, idToObject)
+    paths = pc.main(nodes[0]) 
+    
+    #Insert looping edges to corresponding paths
+    paths = addLoopingEdgesToPaths(loopingEdges, paths)
+    
+    """ REPORT TO A TXT FILE """
+    #Get each path's nodes for easy writing to file
+    nodeList = pc.extractNodefromPaths()
+    
+    #Report each path's nodes to .txt 
+    writeToTxt(nodeList)
+
+""" GET DATA """
+#Define XML file
 file = "deneme2.xml" 
 
-#get to the root of the xml file
-tree = ET.parse(file)
-root = tree.getroot()
-
-#lists in which the nodes edges etc. will be stored in for postprocessing
-startend = list()
-nodes = list()
-edges = list()
-loopingEdges = list()
-texts = list()
-paths = list()
-mapkey = dict()
-
-# for every mxcell struct, find if there is an ellipse node or an edge or a text that names an edge and saves them all to different lists for postprocessing
-#nodes edges and texts have unique Id attributes to be identified. Id attr is read from the xml
-for x in root.iter('mxCell'):
-    try:
-        style = x.get('style')
-        style_split = style.split(';')
-        Id = x.get('id')
-        value = x.get('value')
-        if 'ellipse' in style_split[0]: # ellips is function or button
-            nodes.append(Node(Id, "function", value)) #create a Node object and save it to nodes list
-        
-        elif 'rounded' in style_split[0]:  # rounded(rectangle) is state
-            if value.lower() == 'invoke':
-                startend.insert(0, Node(Id, "Invoke", value, True, False)) 
-            elif value.lower() == 'terminate':
-                startend.append(Node(Id, "Terminate", value, False, True))
-            else:
-                nodes.append(Node(Id, "state", value)) 
-        
-        elif 'shape=callout' in style_split[0]: #state
-            nodes.append(Node(Id, "state", value))
-        
-        elif 'rhombus' in style_split[0]: #if
-            nodes.append(Node(Id, "If", value))
-        
-        elif 'edgeStyle' in style_split[0]: #if the first element of style_split is edgeStyle then this mxcell is an edge
-            target = x.get('target')
-            source = x.get('source')
-            edges.append(Edge(Id, source, target))
-    except AttributeError:
-        pass
-
-nodes.append(startend[-1])
-nodes.insert(0, startend[0])
-
-
-    
-#map source and target of an edge to corresponding nodes using their Ids
-for y in edges:
-    if y.source not in list(mapkey.keys()): #add source node to mapkey
-        mapkey[y.source] = AttrFinder(nodes, 'Id', y.source)  
-    if y.target not in list(mapkey.keys()): #add target node to mapkey
-        mapkey[y.target] = AttrFinder(nodes, 'Id', y.target)
-    if y.Id not in list(mapkey.keys()): # add edge to mapkey
-        mapkey[y.Id] = y
-    if y.source == y.target: # if any looping edge then add it to loopingEdges list and remove it from edges
-        loopingEdges.append(y)
-        edges.remove(y)
-        
-for y in edges: #for every edge add child childedge and parent to nodes
-    try: 
-        mapkey[y.source].addChild(mapkey[y.target])
-        mapkey[y.source].addChildEdge(y)
-        mapkey[y.target].addParent(mapkey[y.source])
-        y.addSourceValue(mapkey[y.source].value) #add the value of source node to edge
-        y.addTargetValue(mapkey[y.target].value)
-    except AttributeError:
-        pass
-
-paths = pathInvestigator(nodes[0], mapkey) #Extract the paths
-for y in loopingEdges: #Add looping edges to paths
-    for row in paths:
-        i = 0
-        for edge in row:
-            if edge.target.Id == y.source:
-                row.insert(i+1, y)
-            i += 1
-            
-Nodepaths = ExtractNodefromPath(paths, mapkey)
-
-output = open("Output.txt","w")
-output.write("\t" + "Initial State\t\t Step\t\t Output" + "\n")
-i = 1
-for row in Nodepaths:
-    output.write("\n" + "Path" + str(i) + "\n")
-    i += 1
-    for node in row:
-            try:
-                output.write(node.value + "\t")
-            except AttributeError:
-                pass
-output.close()
-
-        
+if __name__ == "__main__":
+    main(file)
