@@ -17,31 +17,32 @@ of inputs that may be given by an end-user. Seeing all the possible inputs using
 hard.
 
 This function, extracts every possible path from a flowchart that contains states and functions 
-that can be encountered while using the product. This flowchart should be arranged on draw.io . 
+of a program. This flowchart should be created on draw.io . 
 
-The flowchart should have nodes which represent either as state or function. Nodes should be 
-connected with edges.
+The flowchart should have nodes which represent either a state or function. Nodes should be 
+connected with edges with each other.
 
-There has to be one invoke node. All paths should start from invoke node. Invoke node has to be
-rectangle and its value should be 'invoke'.
+There has to be one invoke node. All paths should start from the invoke node. Invoke node has to be
+rectangle and its value should be 'invoke'. This can be set on draw.io
  
-There has to be a terminate node. All paths should end in this node. Terminate node has to be
-rectangle and its value should 'terminate'.
+There has to be at least one terminate node. All paths should end in this node. Terminate node has 
+to be rectangle and its value should 'terminate'. This can be set on draw.io
 
 A program has functions and states. Functions may be buttons, sliders etc. States and functions are
 the main elements of a flowchart.
 
-"Function" in a flowchart appears to be nodes. However, these nodes has to be rectangle on draw.io
-and its value has to be other than 'invoke' or 'terminate' in order for this program to understand 
-the nodes as functions.
+"Function" in a flowchart appears to be nodes. However, these nodes have to be rectangle on draw.io
+and their valus have to be something other than 'invoke' or 'terminate' in order for this program 
+to understand the nodes as functions.
 
-"State" in a flowchart appears to be nodes. These nodes has to be ellipse on draw.io
-in order for this program to understand the nodes as states.
+"State" in a flowchart appears to be nodes. These nodes have to be ellipse on draw.io
+in order for this program to understand those nodes as states.
 
-Every node has at least one child, parent or childedge. Nodes are connected to each other by edges.
+Every node has at least one child(excluding terminate node), parent or childedge. 
+Nodes are connected to each other by edges.
 
 In order to use this program create your flowchart on draw.io and extract it as XML to your computer
-and BE SURE TO UNCHECK 'Compressed' BEFORE EXPORTING.
+and BE SURE TO UNCHECK 'Compressed' BEFORE EXPORTING as XML.
 
 This script:
     Takes a flowchart as XML format as input.
