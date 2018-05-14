@@ -1,8 +1,0 @@
-	Initial State		 Step		 Output
-
-Path1
-10	20	40	50	80	Terminate	
-Path2
-10	20	60	70	80	Terminate	
-Path3
-10	30	50	80	Terminate	
