@@ -46,18 +46,25 @@ TO CREATE AN ACYCLIC DIRECTED GRAPH ON draw.io . Otherwise, you may encounter wi
 This script:
     Takes a flowchart as XML format as input.
     Then;
+    
     1- Parses the root of XML file which is created on draw.io 
+    
     2- Exracts all nodes and edges drawn on the flowchart and saves them to nodes and edges lists
+    
     3- Creates a dictionary that acts as a map which allows accessing edge and node objects
         by their Ids
+        
     4- If a node has a parent node, a child node or a child edge, assigns them to the node.
         It also, for every edge, assigns an edge's child node's value to that edge as 
         source value. Same is done for target value.
+        
     5- In flowchart, there may be self looping edges that are edges whose target and source
         nodes are the same. To handle these cases easly and prevent an infinite loop while 
         extracting paths, self looping edges are excluded from edges list and saved in a 
         different list.
+        
     6- Extracts all possible paths in the flowchart graph excluding the self looping edges
-    (An edge whose source node and target node are the same is called a self looping edge.)
+    
     7- Includes the self looping edges to the corresponding paths
+    
     8- Reports all paths by writing every nodes' value on a path to a .txt file
